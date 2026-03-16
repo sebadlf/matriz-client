@@ -1,0 +1,45 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Python client library for the **MATBA ROFEX Primary API v1.21** — a REST API for electronic trading on Argentina's derivatives and securities exchange. The library wraps all REST endpoints (segments, instruments, orders, market data, risk) into simple Python functions with automatic token management.
+
+## Development Commands
+
+```bash
+# Install dependencies (uses uv)
+uv sync
+
+# Run the example script
+uv run python main.py
+```
+
+There are no tests, linter, or formatter configured yet. Python 3.12+ is required (see `.python-version`).
+
+## Architecture
+
+The library is a **single-module stateful client** (`matriz_client/`) with module-level globals for auth state:
+
+- **`client.py`** — All API logic. Uses module-level `_token`, `_session`, and `_base_url` globals. Token auto-refreshes before 24h expiry via `_ensure_token()`. Two auth modes:
+  - **Token auth** (most endpoints): `X-Auth-Token` header, obtained via `POST /auth/getToken`
+  - **HTTP Basic Auth** (Risk API only): uses `PRIMARY_USER`/`PRIMARY_PASSWORD` directly
+- **`__init__.py`** — Re-exports all public functions as a flat namespace (`import matriz_client as primary`)
+- **`exceptions.py`** — `PrimaryAPIError` and `AuthenticationError`
+
+All API calls go through `_request()` → `_get()` helpers. The API uses GET for everything, including order submission (this is how the Primary API works, not a bug).
+
+## Configuration
+
+Environment variables loaded from `.env` via `python-dotenv`:
+- `PRIMARY_USER` — API username (required)
+- `PRIMARY_PASSWORD` — API password (required)
+- `PRIMARY_BASE_URL` — defaults to `https://api.remarkets.primary.com.ar`
+
+## API Reference
+
+The full Primary API v1.21 specification is in `primary_api_llm.md` (LLM-optimized markdown). Use this as the authoritative reference when adding endpoints or debugging API behavior. Key concepts:
+- `clOrdId` identifies a request; `orderId` identifies the order in the exchange
+- Market segments: `DDF` (financial derivatives), `DDA` (agricultural), `DUAL`, `MERV` (external markets)
+- Market data entries: `BI` (bid), `OF` (offer), `LA` (last), `OP` (open), `CL` (close), `SE` (settlement), `OI` (open interest)
