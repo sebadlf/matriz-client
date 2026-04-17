@@ -37,6 +37,8 @@ from .client import (
 )
 from .exceptions import AuthenticationError, PrimaryAPIError
 from .ws_client import (
+    DEFAULT_MARKET_DATA_ENTRIES,
+    MARKET_DATA_ENTRIES,
     ws_cancel_order,
     ws_connect,
     ws_disconnect,
@@ -47,6 +49,8 @@ from .ws_client import (
 )
 
 __all__ = [
+    "DEFAULT_MARKET_DATA_ENTRIES",
+    "MARKET_DATA_ENTRIES",
     "AuthenticationError",
     "PrimaryAPIError",
     # REST
