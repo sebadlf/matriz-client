@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 
 from .exceptions import AuthenticationError, PrimaryAPIError
-from .types import Segment
+from .types import CFICode, Instrument, InstrumentDetail, MarketId, Segment, SegmentId
 
 load_dotenv()
 
@@ -169,36 +169,43 @@ def get_segments() -> list[Segment]:
 # ------------------------------------------------------------------
 
 
-def get_all_instruments() -> list[dict[str, Any]]:
-    """Return all tradable instruments with basic info (symbol + marketId)."""
+def get_all_instruments() -> list[Instrument]:
+    """Return all tradable instruments with basic info (symbol + ``marketId``)."""
     return _get("/rest/instruments/all")["instruments"]
 
 
-def get_instruments_details() -> list[dict[str, Any]]:
+def get_instruments_details() -> list[InstrumentDetail]:
     """Return all instruments with full detail (tick size, contract size, etc.)."""
     return _get("/rest/instruments/details")["instruments"]
 
 
-def get_instrument_detail(symbol: str, market_id: str = "ROFX") -> dict[str, Any]:
+def get_instrument_detail(symbol: str, market_id: MarketId = "ROFX") -> InstrumentDetail:
     """Return the full detail record for a single instrument.
 
     Args:
         symbol: Instrument symbol (e.g. ``"DLR/DIC23"``).
-        market_id: Market identifier; defaults to ``"ROFX"``.
+        market_id: Market identifier; defaults to ``"ROFX"`` (§12.1).
     """
     return _get("/rest/instruments/detail", symbol=symbol, marketId=market_id)["instrument"]
 
 
-def get_instruments_by_cfi(cfi_code: str) -> list[dict[str, Any]]:
-    """Return instruments filtered by ISO 10962 CFI code (e.g. ``"FXXXSX"``)."""
+def get_instruments_by_cfi(cfi_code: CFICode) -> list[Instrument]:
+    """Return instruments filtered by ISO 10962 CFI code.
+
+    Accepted values (§5.4): ``ESXXXX``, ``DBXXXX``, ``OCASPS``, ``OPASPS``,
+    ``FXXXSX``, ``OPAFXS``, ``OCAFXS``, ``EMXXXX``, ``DBXXFR``.
+    """
     return _get("/rest/instruments/byCFICode", CFICode=cfi_code)["instruments"]
 
 
-def get_instruments_by_segment(segment_id: str, market_id: str = "ROFX") -> list[dict[str, Any]]:
+def get_instruments_by_segment(
+    segment_id: SegmentId, market_id: MarketId = "ROFX"
+) -> list[Instrument]:
     """Return instruments belonging to the given market segment.
 
     Args:
-        segment_id: One of ``"DDF"``, ``"DDA"``, ``"DUAL"``, ``"MERV"``.
+        segment_id: One of ``"DDF"``, ``"DDA"``, ``"DUAL"``, ``"MERV"``,
+            ``"U-DDF"``, ``"U-DDA"``, ``"U-DUAL"`` (§5.5).
         market_id: Market identifier; defaults to ``"ROFX"``.
     """
     return _get("/rest/instruments/bySegment", MarketSegmentID=segment_id, MarketID=market_id)[
