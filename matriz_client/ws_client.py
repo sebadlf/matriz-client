@@ -1,3 +1,17 @@
+"""WebSocket streaming client for the MATBA ROFEX Primary API.
+
+Provides real-time market data and execution-report subscriptions, plus
+order entry/cancel over the same connection. The WebSocket URL is derived
+from the REST base URL by swapping the scheme (``https`` → ``wss``), and
+the connection authenticates with the cached REST token, so
+:func:`matriz_client.client.login` must have succeeded before
+:func:`ws_connect`.
+
+The connection runs its event loop in a background daemon thread. All
+inbound frames are dispatched to the user-provided callbacks registered
+at :func:`ws_connect` time.
+"""
+
 from __future__ import annotations
 
 import json
