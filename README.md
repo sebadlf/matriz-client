@@ -87,6 +87,43 @@ primary.ws_subscribe_market_data(["DLR/DIC23"], depth=5)
 from matriz_client import Side, OrderType, TimeInForce, Order, MarketDataSnapshot
 ```
 
+## Migrating from 0.1.x
+
+`0.2.0` replaces dict-based responses (TypedDicts) with frozen safe-access dataclasses. Field access is by attribute, not subscript:
+
+```python
+# 0.1.x — TypedDict / raw JSON
+md = primary.get_market_data("DLR/DIC23")
+print(md["OP"], md["BI"][0]["price"])     # KeyError if "OP" or "BI" missing
+
+resp = primary.new_order(...)
+print(resp["clientId"])
+
+# 0.2.0 — safe-access dataclasses
+md = primary.get_market_data("DLR/DIC23")
+print(md.OP, md.BI[0].price)              # md.OP can be None, never raises
+print(md.SE.price)                        # nested chain safe even if "SE" missing
+
+resp = primary.new_order(...)
+print(resp.clientId)
+```
+
+WebSocket callbacks now receive a tagged `PrimaryWsMessage` instead of a raw `dict`:
+
+```python
+# 0.1.x
+def on_msg(msg: dict) -> None:
+    if msg["type"] == "Md":
+        print(msg["marketData"]["BI"])
+
+# 0.2.0
+def on_msg(msg: PrimaryWsMessage) -> None:
+    if isinstance(msg, MarketDataFrame):
+        print(msg.marketData.BI)
+```
+
+**Safety guarantee.** Missing keys never raise `KeyError`/`AttributeError`. Lists default to `[]`, nested models to an empty instance, scalars to `None`, dicts to `{}`. Chained access like `snapshot.SE.price` always resolves — the worst case is a final `None`.
+
 ## Reference
 
 - Full Primary API v1.21 spec: [`primary_api_llm.md`](./primary_api_llm.md)
