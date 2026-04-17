@@ -1,14 +1,16 @@
-"""Round-trip tests for :mod:`matriz_client.models` against spec payloads.
+"""Tests for the safe-access models in :mod:`matriz_client.models`.
 
-Payloads are hand-derived from the examples in ``primary_api_llm.md``. The
-goal is to validate that the Pydantic models match the wire format and
-that our ``extra="ignore"`` / ``frozen=True`` config behaves as expected.
+The contract: ``Model.from_api(payload)`` parses any dict (full, partial,
+or empty) without raising; missing keys collapse to safe defaults
+(``[]``, empty model, ``None``, ``{}``) so attribute access on the
+result never raises ``KeyError`` or ``AttributeError``.
 """
 
 from __future__ import annotations
 
+from dataclasses import FrozenInstanceError
+
 import pytest
-from pydantic import ValidationError
 
 from matriz_client.models import (
     AccountReport,
@@ -33,36 +35,34 @@ from matriz_client.models import (
 
 
 def test_instrument_id_round_trip() -> None:
-    data = {"marketId": "ROFX", "symbol": "DLR/DIC23"}
-    parsed = InstrumentId.model_validate(data)
+    parsed = InstrumentId.from_api({"marketId": "ROFX", "symbol": "DLR/DIC23"})
     assert parsed.marketId == "ROFX"
     assert parsed.symbol == "DLR/DIC23"
-    assert parsed.model_dump() == data
 
 
 def test_segment_round_trip() -> None:
-    data = {"marketSegmentId": "DDF", "marketId": "ROFX"}
-    parsed = Segment.model_validate(data)
+    parsed = Segment.from_api({"marketSegmentId": "DDF", "marketId": "ROFX"})
     assert parsed.marketSegmentId == "DDF"
     assert parsed.marketId == "ROFX"
 
 
 def test_instrument_round_trip() -> None:
-    data = {
-        "instrumentId": {"marketId": "ROFX", "symbol": "DLR/DIC23"},
-        "cficode": "FXXXSX",
-    }
-    parsed = Instrument.model_validate(data)
+    parsed = Instrument.from_api(
+        {
+            "instrumentId": {"marketId": "ROFX", "symbol": "DLR/DIC23"},
+            "cficode": "FXXXSX",
+        }
+    )
     assert parsed.instrumentId.symbol == "DLR/DIC23"
     assert parsed.cficode == "FXXXSX"
 
 
 def test_instrument_detail_accepts_partial_payload() -> None:
-    # InstrumentDetail is the Pydantic equivalent of TypedDict(total=False),
-    # so an empty dict must parse successfully.
-    detail = InstrumentDetail.model_validate({})
-    assert detail.instrumentId is None
+    detail = InstrumentDetail.from_api({})
+    assert detail.instrumentId == InstrumentId.empty()
     assert detail.currency is None
+    assert detail.orderTypes == []
+    assert detail.tickPriceRanges == {}
 
 
 # ----------------------------------------------------------------------
@@ -71,8 +71,7 @@ def test_instrument_detail_accepts_partial_payload() -> None:
 
 
 def test_new_order_response_round_trip() -> None:
-    data = {"clientId": "1-1234", "proprietary": "PBCP"}
-    parsed = NewOrderResponse.model_validate(data)
+    parsed = NewOrderResponse.from_api({"clientId": "1-1234", "proprietary": "PBCP"})
     assert parsed.clientId == "1-1234"
     assert parsed.proprietary == "PBCP"
 
@@ -101,22 +100,31 @@ ORDER_PAYLOAD = {
 
 
 def test_order_round_trip() -> None:
-    parsed = Order.model_validate(ORDER_PAYLOAD)
+    parsed = Order.from_api(ORDER_PAYLOAD)
     assert parsed.orderId == "218681"
     assert parsed.side == "BUY"
     assert parsed.instrumentId.symbol == "DLR/DIC23"
 
 
 def test_order_accepts_null_order_id() -> None:
-    # In pre-accept states (e.g. PENDING_NEW) the exchange returns orderId=null.
     payload = {**ORDER_PAYLOAD, "orderId": None, "status": "PENDING_NEW"}
-    parsed = Order.model_validate(payload)
+    parsed = Order.from_api(payload)
     assert parsed.orderId is None
 
 
+def test_order_partial_payload_uses_safe_defaults() -> None:
+    parsed = Order.from_api({"clOrdId": "only"})
+    assert parsed.clOrdId == "only"
+    assert parsed.orderId is None
+    assert parsed.price is None
+    assert parsed.instrumentId == InstrumentId.empty()
+    assert parsed.instrumentId.symbol is None
+
+
 def test_order_report_superset_of_order() -> None:
-    report = OrderReport.model_validate({**ORDER_PAYLOAD, "wsClOrdId": "ws-abc"})
+    report = OrderReport.from_api({**ORDER_PAYLOAD, "wsClOrdId": "ws-abc"})
     assert report.wsClOrdId == "ws-abc"
+    assert report.orderId == "218681"
 
 
 # ----------------------------------------------------------------------
@@ -125,23 +133,18 @@ def test_order_report_superset_of_order() -> None:
 
 
 def test_market_data_level_round_trip() -> None:
-    parsed = MarketDataLevel.model_validate({"price": 179.8, "size": 1000})
+    parsed = MarketDataLevel.from_api({"price": 179.8, "size": 1000})
     assert parsed.price == 179.8
     assert parsed.size == 1000
 
 
 def test_market_data_entry_value_allows_nulls() -> None:
-    parsed = MarketDataEntryValue.model_validate(
-        {"price": None, "size": 217596, "date": 1664150400000}
-    )
+    parsed = MarketDataEntryValue.from_api({"price": None, "size": 217596, "date": 1664150400000})
     assert parsed.price is None
     assert parsed.size == 217596
 
 
 def test_market_data_snapshot_from_spec_example() -> None:
-    # Based on §8.1. ``CL`` in the live example is an object, but the
-    # TypedDict declares it as a scalar — mirrored here. Tests use only
-    # the fields that match the current type surface.
     payload = {
         "SE": {"price": 180.3, "size": None, "date": 1669852800000},
         "LA": {"price": 179.85, "size": 4, "date": 1669995044232},
@@ -156,18 +159,32 @@ def test_market_data_snapshot_from_spec_example() -> None:
             {"price": 178.95, "size": 514},
         ],
     }
-    parsed = MarketDataSnapshot.model_validate(payload)
+    parsed = MarketDataSnapshot.from_api(payload)
     assert parsed.OP == 180.35
-    assert parsed.BI is not None
     assert parsed.BI[0].price == 179.75
-    assert parsed.SE is not None
     assert parsed.SE.size is None
+    assert parsed.SE.price == 180.3
 
 
 def test_market_data_snapshot_accepts_empty_payload() -> None:
-    parsed = MarketDataSnapshot.model_validate({})
-    assert parsed.BI is None
+    parsed = MarketDataSnapshot.from_api({})
+    assert parsed.BI == []
+    assert parsed.OF == []
     assert parsed.OP is None
+    # Nested-model fields default to an empty instance, never None.
+    assert MarketDataEntryValue.empty() == parsed.SE
+    assert parsed.SE.price is None
+
+
+def test_market_data_snapshot_safe_chained_access_on_missing_keys() -> None:
+    """The headline guarantee: chained access never raises on missing keys."""
+    parsed = MarketDataSnapshot.from_api({"OP": 180.0})
+    assert parsed.OP == 180.0
+    # Missing BI iterates as an empty list, not None.
+    assert list(parsed.BI) == []
+    # Missing SE returns an empty MarketDataEntryValue; .price is None.
+    assert parsed.SE.price is None
+    assert parsed.LA.size is None
 
 
 # ----------------------------------------------------------------------
@@ -176,7 +193,7 @@ def test_market_data_snapshot_accepts_empty_payload() -> None:
 
 
 def test_trade_round_trip() -> None:
-    parsed = Trade.model_validate(
+    parsed = Trade.from_api(
         {
             "symbol": "DLR/DIC23",
             "servertime": 1669995044232,
@@ -189,7 +206,7 @@ def test_trade_round_trip() -> None:
 
 
 def test_position_round_trip() -> None:
-    parsed = Position.model_validate(
+    parsed = Position.from_api(
         {
             "symbol": "DLR/DIC23",
             "buySize": 10.0,
@@ -205,17 +222,42 @@ def test_position_round_trip() -> None:
 
 
 def test_detailed_position_accepts_partial_payload() -> None:
-    parsed = DetailedPosition.model_validate({"account": "REM6771"})
+    parsed = DetailedPosition.from_api({"account": "REM6771"})
     assert parsed.account == "REM6771"
-    assert parsed.report is None
+    assert parsed.report == {}
 
 
 def test_account_report_accepts_partial_payload() -> None:
-    parsed = AccountReport.model_validate(
+    parsed = AccountReport.from_api(
         {"accountName": "REM6771", "collateral": 1000.0, "margin": 250.0}
     )
     assert parsed.accountName == "REM6771"
-    assert parsed.portfolio is None
+    assert parsed.portfolio == {}
+    assert parsed.detailedAccountReports == {}
+
+
+# ----------------------------------------------------------------------
+# Constructor edge cases
+# ----------------------------------------------------------------------
+
+
+def test_from_api_with_none_returns_empty() -> None:
+    assert MarketDataSnapshot.from_api(None) == MarketDataSnapshot.empty()
+    assert Order.from_api(None) == Order.empty()
+
+
+def test_from_api_with_non_dict_returns_empty() -> None:
+    # Defensive: if the API ever returns something unexpected, the model
+    # still constructs cleanly instead of raising.
+    assert NewOrderResponse.from_api("garbage") == NewOrderResponse.empty()
+    assert NewOrderResponse.from_api(123) == NewOrderResponse.empty()
+
+
+def test_empty_classmethod_produces_default_instance() -> None:
+    snapshot = MarketDataSnapshot.empty()
+    assert snapshot.BI == []
+    assert snapshot.OP is None
+    assert snapshot.SE.price is None
 
 
 # ----------------------------------------------------------------------
@@ -224,8 +266,7 @@ def test_account_report_accepts_partial_payload() -> None:
 
 
 def test_extra_fields_are_ignored() -> None:
-    # Forward-compat: API can add fields without breaking the client.
-    parsed = NewOrderResponse.model_validate(
+    parsed = NewOrderResponse.from_api(
         {"clientId": "1-1234", "proprietary": "PBCP", "newField": "future"}
     )
     assert parsed.clientId == "1-1234"
@@ -233,11 +274,6 @@ def test_extra_fields_are_ignored() -> None:
 
 
 def test_models_are_frozen() -> None:
-    parsed = NewOrderResponse.model_validate({"clientId": "1-1234", "proprietary": "PBCP"})
-    with pytest.raises(ValidationError):
+    parsed = NewOrderResponse.from_api({"clientId": "1-1234", "proprietary": "PBCP"})
+    with pytest.raises(FrozenInstanceError):
         parsed.clientId = "mutated"  # type: ignore[misc]
-
-
-def test_missing_required_field_raises() -> None:
-    with pytest.raises(ValidationError):
-        NewOrderResponse.model_validate({"clientId": "only"})
