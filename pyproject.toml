@@ -1,20 +1,76 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "matriz-client"
 version = "0.1.0"
-description = "Add your description here"
+description = "Python client for the MATBA ROFEX Primary API v1.21 (REST + WebSocket)."
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+authors = [
+    { name = "Sebastián de la Fuente", email = "sebadlf@gmail.com" },
+]
+keywords = [
+    "matba-rofex",
+    "primary-api",
+    "trading",
+    "argentina",
+    "derivatives",
+    "websocket",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Typing :: Typed",
+]
 dependencies = [
     "python-dotenv>=1.2.2",
     "requests>=2.32.5",
     "websocket-client>=1.8.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/sebadlf/matriz-client"
+Repository = "https://github.com/sebadlf/matriz-client"
+Issues = "https://github.com/sebadlf/matriz-client/issues"
+
 [dependency-groups]
 dev = [
     "pyright>=1.1.380",
     "pytest>=8.3.0",
     "ruff>=0.11.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["matriz_client"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "matriz_client",
+    "README.md",
+    "LICENSE",
+    "primary_api_llm.md",
+    "pyproject.toml",
+]
+exclude = [
+    "matriz-vault",
+    "tests",
+    "utils",
+    ".github",
+    ".claude",
+    "main*.py",
+    "keys.py",
+    "Primary-API.*",
+    "*.ipynb",
+    ".env*",
+    "dist",
 ]
 
 [tool.pytest.ini_options]
