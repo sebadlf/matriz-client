@@ -35,6 +35,7 @@ from .types import (
     InstrumentDetail,
     MarketId,
     NewOrderResponse,
+    Order,
     OrderType,
     Segment,
     SegmentId,
@@ -322,34 +323,38 @@ def cancel_order(cl_ord_id: str, proprietary: str) -> NewOrderResponse:
     return _get("/rest/order/cancelById", clOrdId=cl_ord_id, proprietary=proprietary)["order"]
 
 
-def get_order_status(cl_ord_id: str, proprietary: str) -> dict[str, Any]:
-    """Return the latest status record for the request ``(clOrdId, proprietary)``."""
+def get_order_status(cl_ord_id: str, proprietary: str) -> Order:
+    """Return the latest status record for the request ``(clOrdId, proprietary)`` (§6.8)."""
     return _get("/rest/order/id", clOrdId=cl_ord_id, proprietary=proprietary)["order"]
 
 
-def get_order_history(cl_ord_id: str, proprietary: str) -> dict[str, Any]:
-    """Return the full list of status transitions for ``(clOrdId, proprietary)``."""
-    return _get("/rest/order/allById", clOrdId=cl_ord_id, proprietary=proprietary)
+def get_order_history(cl_ord_id: str, proprietary: str) -> list[Order]:
+    """Return the full list of status transitions for ``(clOrdId, proprietary)`` (§6.9).
+
+    The ``orders`` envelope is unwrapped so callers iterate directly over
+    :class:`~matriz_client.types.Order` records.
+    """
+    return _get("/rest/order/allById", clOrdId=cl_ord_id, proprietary=proprietary)["orders"]
 
 
-def get_active_orders(account_id: str) -> dict[str, Any]:
-    """Return all orders currently active (``NEW`` or ``PARTIALLY_FILLED``) for an account."""
-    return _get("/rest/order/actives", accountId=account_id)
+def get_active_orders(account_id: str) -> list[Order]:
+    """Return all orders currently active (``NEW`` or ``PARTIALLY_FILLED``) for an account (§6.10)."""
+    return _get("/rest/order/actives", accountId=account_id)["orders"]
 
 
-def get_filled_orders(account_id: str) -> dict[str, Any]:
-    """Return all fully filled orders for an account."""
-    return _get("/rest/order/filleds", accountId=account_id)
+def get_filled_orders(account_id: str) -> list[Order]:
+    """Return all fully filled orders for an account (§6.11)."""
+    return _get("/rest/order/filleds", accountId=account_id)["orders"]
 
 
-def get_all_orders(account_id: str) -> dict[str, Any]:
-    """Return the latest status record of every request sent by an account."""
-    return _get("/rest/order/all", accountId=account_id)
+def get_all_orders(account_id: str) -> list[Order]:
+    """Return the latest status record of every request sent by an account (§6.12)."""
+    return _get("/rest/order/all", accountId=account_id)["orders"]
 
 
-def get_order_by_exec_id(exec_id: str) -> dict[str, Any]:
-    """Return the order matching the given execution ID (``execId``)."""
-    return _get("/rest/order/byExecId", execId=exec_id)
+def get_order_by_exec_id(exec_id: str) -> Order:
+    """Return the order matching the given execution ID (``execId``) (§6.13)."""
+    return _get("/rest/order/byExecId", execId=exec_id)["order"]
 
 
 # ------------------------------------------------------------------
