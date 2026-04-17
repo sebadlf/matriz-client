@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 
 from .exceptions import AuthenticationError, PrimaryAPIError
+from .types import Segment
 
 load_dotenv()
 
@@ -153,8 +154,13 @@ def _risk_auth() -> tuple[str, str]:
 # ------------------------------------------------------------------
 
 
-def get_segments() -> list[dict[str, str]]:
-    """Return all available market segments (``DDF``, ``DDA``, ``DUAL``, ``MERV``)."""
+def get_segments() -> list[Segment]:
+    """Return all available market segments.
+
+    Each :class:`~matriz_client.types.Segment` carries its ``marketSegmentId``
+    — one of ``DDF``, ``DDA``, ``DUAL``, ``MERV``, ``U-DDF``, ``U-DDA``,
+    ``U-DUAL`` — and the owning ``marketId`` (§4).
+    """
     return _get("/rest/segment/all")["segments"]
 
 
