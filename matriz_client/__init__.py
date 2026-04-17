@@ -22,10 +22,20 @@ from .client import (
     replace_order,
 )
 from .exceptions import AuthenticationError, PrimaryAPIError
+from .ws_client import (
+    ws_cancel_order,
+    ws_connect,
+    ws_disconnect,
+    ws_is_connected,
+    ws_new_order,
+    ws_subscribe_market_data,
+    ws_subscribe_order_reports,
+)
 
 __all__ = [
     "AuthenticationError",
     "PrimaryAPIError",
+    # REST
     "cancel_order",
     "get_account_report",
     "get_active_orders",
@@ -47,4 +57,12 @@ __all__ = [
     "login",
     "new_order",
     "replace_order",
+    # WebSocket
+    "ws_cancel_order",
+    "ws_connect",
+    "ws_disconnect",
+    "ws_is_connected",
+    "ws_new_order",
+    "ws_subscribe_market_data",
+    "ws_subscribe_order_reports",
 ]

@@ -4,6 +4,7 @@ Requires a .env file with PRIMARY_USER and PRIMARY_PASSWORD.
 """
 
 import matriz_client as primary
+import time
 
 
 # usuario: api_bbsa
@@ -34,16 +35,47 @@ def main() -> None:
     # report = primary.get_account_report("REM6771")
     # print("Account report:", report)
 
-    symbol = "MERV - XMEV - AL30 - 24HS"
+    symbol = "MERV - XMEV - AAPL - 24HS"
 
-    result = primary.new_order(symbol, "SELL", 50, ACCOUNT_1, price=91000)
-    print(result)
+    print(primary.get_market_data(symbol, depth=5))
 
-    check = primary.get_order_status(result["clientId"], result["proprietary"])
-    print(check)
+    # result = primary.new_order(symbol, "SELL", 1, "5208", None, order_type="MARKET")
+    # print(result)
+    # print("")
 
-    md = primary.get_market_data(symbol)
-    print(f"Market data for {symbol}:", md)
+    # time.sleep(3)
+
+    # check = primary.get_order_status(result["clientId"], result["proprietary"])
+    # print(check)
+    # print("")
+
+    # time.sleep(3)
+
+    # check = primary.get_order_status(result["clientId"], result["proprietary"])
+    # print(check)
+    # print("")
+
+    # time.sleep(3)
+
+    # check = primary.get_order_status(result["clientId"], result["proprietary"])
+    # print(check)
+    # print("")
+
+    # md = primary.get_market_data(symbol)
+    # print(f"Market data for {symbol}:", md)
+    # print("")
+
+    # check = primary.get_order_status(result["clientId"], result["proprietary"])
+    # print(check)
+    # print("")
+
+    # md = primary.get_market_data(symbol)
+    # print(f"Market data for {symbol}:", md)
+    # print("")
+
+    # check = primary.get_order_status("512599370000059", "ISV_PBCP")
+    # print(check)
+    # print("")
 
 
 if __name__ == "__main__":
