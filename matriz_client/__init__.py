@@ -36,31 +36,33 @@ from .client import (
     replace_order,
 )
 from .exceptions import AuthenticationError, PrimaryAPIError
-from .types import (
+from .models import (
     AccountId,
     AccountReport,
-    CFICode,
-    Currency,
     DetailedPosition,
     Instrument,
     InstrumentDetail,
     InstrumentId,
-    MarketDataEntry,
     MarketDataEntryValue,
     MarketDataLevel,
     MarketDataSnapshot,
-    MarketId,
     NewOrderResponse,
     Order,
     OrderReport,
-    OrderStatus,
-    OrderType,
     Position,
     Segment,
+    Trade,
+)
+from .types import (
+    CFICode,
+    Currency,
+    MarketDataEntry,
+    MarketId,
+    OrderStatus,
+    OrderType,
     SegmentId,
     Side,
     TimeInForce,
-    Trade,
 )
 from .ws_client import (
     DEFAULT_MARKET_DATA_ENTRIES,
@@ -111,7 +113,7 @@ __all__ = [
     "SegmentId",
     "Side",
     "TimeInForce",
-    # Types — TypedDicts
+    # Models — safe-access dataclasses
     "AccountId",
     "AccountReport",
     "DetailedPosition",
