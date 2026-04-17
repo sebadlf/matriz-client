@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Sequence
 from typing import Any
 
 import requests as _requests
@@ -30,9 +31,12 @@ from requests.auth import HTTPBasicAuth
 
 from .exceptions import AuthenticationError, PrimaryAPIError
 from .types import (
+    DEFAULT_MARKET_DATA_ENTRIES,
     CFICode,
     Instrument,
     InstrumentDetail,
+    MarketDataEntry,
+    MarketDataSnapshot,
     MarketId,
     NewOrderResponse,
     Order,
@@ -41,6 +45,7 @@ from .types import (
     SegmentId,
     Side,
     TimeInForce,
+    Trade,
 )
 
 load_dotenv()
@@ -364,18 +369,19 @@ def get_order_by_exec_id(exec_id: str) -> Order:
 
 def get_market_data(
     symbol: str,
-    entries: str = "BI,OF,LA,OP,CL,SE,OI",
+    entries: Sequence[MarketDataEntry] = DEFAULT_MARKET_DATA_ENTRIES,
     *,
-    market_id: str = "ROFX",
+    market_id: MarketId = "ROFX",
     depth: int | None = None,
-) -> dict[str, Any]:
-    """Return real-time market data for an instrument.
+) -> MarketDataSnapshot:
+    """Return real-time market data for an instrument (§8.1).
 
     Args:
         symbol: Instrument symbol (e.g. ``"DLR/DIC23"``).
-        entries: Comma-separated list of entry codes:
-            ``BI`` (bid), ``OF`` (offer), ``LA`` (last), ``OP`` (open),
-            ``CL`` (close), ``SE`` (settlement), ``OI`` (open interest).
+        entries: Sequence of entry codes — see
+            :data:`~matriz_client.types.MARKET_DATA_ENTRIES` for the full
+            catalogue. Defaults to
+            :data:`~matriz_client.types.DEFAULT_MARKET_DATA_ENTRIES`.
         market_id: Market identifier; defaults to ``"ROFX"``.
         depth: Book depth (1-5); ``None`` uses the server default.
     """
@@ -383,7 +389,7 @@ def get_market_data(
         "/rest/marketdata/get",
         marketId=market_id,
         symbol=symbol,
-        entries=entries,
+        entries=",".join(entries),
         depth=depth,
     )["marketData"]
 
@@ -394,10 +400,10 @@ def get_trades(
     date: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
-    market_id: str = "ROFX",
+    market_id: MarketId = "ROFX",
     environment: str | None = None,
-) -> list[dict[str, Any]]:
-    """Return historical trades for an instrument.
+) -> list[Trade]:
+    """Return historical trades for an instrument (§8.4).
 
     Use ``date`` for a single day, or the ``date_from``/``date_to`` pair
     for a range. Dates must be in ``"YYYY-MM-DD"`` format.
