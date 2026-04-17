@@ -4,8 +4,6 @@ Requires a .env file with PRIMARY_USER and PRIMARY_PASSWORD.
 """
 
 import matriz_client as primary
-import time
-
 
 # usuario: api_bbsa
 # contraseña: ktMqm7sD_

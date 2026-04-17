@@ -3,9 +3,11 @@ Time-based caching decorator that caches function results based on parameters an
 Only calls the function if parameters are new or specified seconds have passed.
 """
 
-import time
 import functools
-from typing import Any, Callable, Dict, Tuple, TypeVar, cast
+import time
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
+
 from typing_extensions import ParamSpec
 
 # Type variables for preserving function signatures
@@ -41,7 +43,7 @@ def time_cached(seconds: float, *, debug: bool = False) -> Callable[[F], F]:
     def decorator(func: F) -> F:
         # Dictionary to store cached results and timestamps
         # Key: hash of arguments, Value: (result, timestamp)
-        cache: Dict[int, Tuple[Any, float]] = {}
+        cache: dict[int, tuple[Any, float]] = {}
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -60,9 +62,7 @@ def time_cached(seconds: float, *, debug: bool = False) -> Callable[[F], F]:
                 # If the cached result is still fresh (within the time limit)
                 if current_time - cached_time < seconds:
                     if debug:
-                        print(
-                            f"Cache hit for {func.__name__} with args={args}, kwargs={kwargs}"
-                        )
+                        print(f"Cache hit for {func.__name__} with args={args}, kwargs={kwargs}")
                     return cached_result
                 else:
                     if debug:
