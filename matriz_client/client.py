@@ -29,7 +29,18 @@ from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 
 from .exceptions import AuthenticationError, PrimaryAPIError
-from .types import CFICode, Instrument, InstrumentDetail, MarketId, Segment, SegmentId
+from .types import (
+    CFICode,
+    Instrument,
+    InstrumentDetail,
+    MarketId,
+    NewOrderResponse,
+    OrderType,
+    Segment,
+    SegmentId,
+    Side,
+    TimeInForce,
+)
 
 load_dotenv()
 
@@ -220,32 +231,35 @@ def get_instruments_by_segment(
 
 def new_order(
     symbol: str,
-    side: str,
+    side: Side,
     qty: int,
     account: str,
     price: float | None = None,
     *,
-    order_type: str = "LIMIT",
-    time_in_force: str = "DAY",
-    market_id: str = "ROFX",
+    order_type: OrderType = "LIMIT",
+    time_in_force: TimeInForce = "DAY",
+    market_id: MarketId = "ROFX",
     cancel_previous: bool = False,
     iceberg: bool = False,
     display_qty: int | None = None,
     expire_date: str | None = None,
-) -> dict[str, Any]:
-    """Submit a new single order.
+) -> NewOrderResponse:
+    """Submit a new single order (§6.3).
 
     Note: The Primary API accepts order submission over HTTP **GET**; this
     is a quirk of the upstream API, not a bug in this client.
 
     Args:
         symbol: Instrument symbol (e.g. ``"DLR/DIC23"``).
-        side: ``"BUY"`` or ``"SELL"``.
+        side: ``"BUY"`` or ``"SELL"`` (:data:`~matriz_client.types.Side`).
         qty: Order quantity.
         account: Account ID to submit the order on behalf of.
         price: Limit price; required for ``order_type="LIMIT"``.
-        order_type: ``"LIMIT"`` or ``"MARKET"``; defaults to ``"LIMIT"``.
-        time_in_force: ``"DAY"``, ``"IOC"``, ``"FOK"`` or ``"GTD"``.
+        order_type: One of :data:`~matriz_client.types.OrderType`
+            (``"LIMIT"``, ``"MARKET"``, ``"STOP_LIMIT"``,
+            ``"STOP_LIMIT_MERVAL"``); defaults to ``"LIMIT"``.
+        time_in_force: One of :data:`~matriz_client.types.TimeInForce`
+            (``"DAY"``, ``"IOC"``, ``"FOK"``, ``"GTD"``).
         market_id: Market identifier; defaults to ``"ROFX"``.
         cancel_previous: If ``True``, cancel previous active orders for the
             same instrument/account before placing this one.
@@ -254,8 +268,9 @@ def new_order(
         expire_date: Expiry date for ``GTD`` orders (``"YYYYMMDD"``).
 
     Returns:
-        Mapping with ``{"clientId": ..., "proprietary": ...}`` — together
-        they identify the request in every subsequent call.
+        :class:`~matriz_client.types.NewOrderResponse` with ``clientId`` and
+        ``proprietary`` — together they identify the request in every
+        subsequent call.
     """
     params: dict[str, Any] = {
         "marketId": market_id,
@@ -278,11 +293,15 @@ def new_order(
     return _get("/rest/order/newSingleOrder", **params)["order"]
 
 
-def replace_order(cl_ord_id: str, proprietary: str, qty: int, price: float) -> dict[str, Any]:
-    """Modify an existing order, identified by ``(clOrdId, proprietary)``.
+def replace_order(cl_ord_id: str, proprietary: str, qty: int, price: float) -> NewOrderResponse:
+    """Modify an existing order, identified by ``(clOrdId, proprietary)`` (§6.5).
 
     Replacing an order atomically cancels the original and creates a new
     one with the same ``clOrdId`` but a new ``orderId`` at the exchange.
+
+    Returns:
+        :class:`~matriz_client.types.NewOrderResponse` — the ``order``
+        envelope unwrapped for consistency with :func:`new_order`.
     """
     return _get(
         "/rest/order/replaceById",
@@ -290,12 +309,17 @@ def replace_order(cl_ord_id: str, proprietary: str, qty: int, price: float) -> d
         proprietary=proprietary,
         orderQty=qty,
         price=price,
-    )
+    )["order"]
 
 
-def cancel_order(cl_ord_id: str, proprietary: str) -> dict[str, Any]:
-    """Cancel the order identified by ``(clOrdId, proprietary)``."""
-    return _get("/rest/order/cancelById", clOrdId=cl_ord_id, proprietary=proprietary)
+def cancel_order(cl_ord_id: str, proprietary: str) -> NewOrderResponse:
+    """Cancel the order identified by ``(clOrdId, proprietary)`` (§6.6).
+
+    Returns:
+        :class:`~matriz_client.types.NewOrderResponse` — the ``order``
+        envelope unwrapped for consistency with :func:`new_order`.
+    """
+    return _get("/rest/order/cancelById", clOrdId=cl_ord_id, proprietary=proprietary)["order"]
 
 
 def get_order_status(cl_ord_id: str, proprietary: str) -> dict[str, Any]:
