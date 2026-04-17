@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 import threading
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import websocket
 
@@ -109,9 +110,7 @@ def ws_connect(
     _ws_thread = threading.Thread(target=_ws.run_forever, daemon=True)
     _ws_thread.start()
     if not _connected.wait(timeout=timeout):
-        raise TimeoutError(
-            f"WebSocket connection to {url} timed out after {timeout}s"
-        )
+        raise TimeoutError(f"WebSocket connection to {url} timed out after {timeout}s")
 
 
 def ws_disconnect() -> None:
@@ -159,9 +158,7 @@ def ws_subscribe_market_data(
         "type": "smd",
         "level": 1,
         "entries": entries,
-        "products": [
-            {"symbol": s, "marketId": market_id} for s in symbols
-        ],
+        "products": [{"symbol": s, "marketId": market_id} for s in symbols],
         "depth": depth,
     }
     _send(msg)
@@ -266,8 +263,10 @@ def ws_cancel_order(client_id: str, proprietary: str) -> None:
         client_id: The clOrdId of the order to cancel.
         proprietary: The proprietary identifier (e.g. "PBCP").
     """
-    _send({
-        "type": "co",
-        "clientId": client_id,
-        "proprietary": proprietary,
-    })
+    _send(
+        {
+            "type": "co",
+            "clientId": client_id,
+            "proprietary": proprietary,
+        }
+    )

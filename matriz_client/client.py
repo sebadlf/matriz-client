@@ -13,9 +13,7 @@ from .exceptions import AuthenticationError, PrimaryAPIError
 load_dotenv()
 
 # -- Module-level state --
-_base_url: str = os.getenv(
-    "PRIMARY_BASE_URL", "https://api.remarkets.primary.com.ar"
-).rstrip("/")
+_base_url: str = os.getenv("PRIMARY_BASE_URL", "https://api.remarkets.primary.com.ar").rstrip("/")
 _user: str = os.getenv("PRIMARY_USER", "")
 _password: str = os.getenv("PRIMARY_PASSWORD", "")
 _token: str | None = None
@@ -41,9 +39,7 @@ def login() -> str:
     """Authenticate and store the token. Returns the token string."""
     global _token, _token_ts
     if not _user or not _password:
-        raise AuthenticationError(
-            "ERROR", "PRIMARY_USER and PRIMARY_PASSWORD must be set"
-        )
+        raise AuthenticationError("ERROR", "PRIMARY_USER and PRIMARY_PASSWORD must be set")
 
     resp = _session.post(
         f"{_base_url}/auth/getToken",
@@ -73,15 +69,11 @@ def _request(
 ) -> dict[str, Any]:
     url = f"{_base_url}{path}"
     if auth_basic:
-        resp = _session.request(
-            method, url, params=params, auth=HTTPBasicAuth(*auth_basic)
-        )
+        resp = _session.request(method, url, params=params, auth=HTTPBasicAuth(*auth_basic))
     else:
         _ensure_token()
         assert _token is not None
-        resp = _session.request(
-            method, url, params=params, headers={"X-Auth-Token": _token}
-        )
+        resp = _session.request(method, url, params=params, headers={"X-Auth-Token": _token})
 
     resp.raise_for_status()
     data: dict[str, Any] = resp.json()
@@ -130,9 +122,7 @@ def get_instruments_details() -> list[dict[str, Any]]:
 
 def get_instrument_detail(symbol: str, market_id: str = "ROFX") -> dict[str, Any]:
     """Return detail for a single instrument."""
-    return _get("/rest/instruments/detail", symbol=symbol, marketId=market_id)[
-        "instrument"
-    ]
+    return _get("/rest/instruments/detail", symbol=symbol, marketId=market_id)["instrument"]
 
 
 def get_instruments_by_cfi(cfi_code: str) -> list[dict[str, Any]]:
@@ -140,13 +130,11 @@ def get_instruments_by_cfi(cfi_code: str) -> list[dict[str, Any]]:
     return _get("/rest/instruments/byCFICode", CFICode=cfi_code)["instruments"]
 
 
-def get_instruments_by_segment(
-    segment_id: str, market_id: str = "ROFX"
-) -> list[dict[str, Any]]:
+def get_instruments_by_segment(segment_id: str, market_id: str = "ROFX") -> list[dict[str, Any]]:
     """Return instruments in a given segment."""
-    return _get(
-        "/rest/instruments/bySegment", MarketSegmentID=segment_id, MarketID=market_id
-    )["instruments"]
+    return _get("/rest/instruments/bySegment", MarketSegmentID=segment_id, MarketID=market_id)[
+        "instruments"
+    ]
 
 
 # ------------------------------------------------------------------
@@ -191,9 +179,7 @@ def new_order(
     return _get("/rest/order/newSingleOrder", **params)["order"]
 
 
-def replace_order(
-    cl_ord_id: str, proprietary: str, qty: int, price: float
-) -> dict[str, Any]:
+def replace_order(cl_ord_id: str, proprietary: str, qty: int, price: float) -> dict[str, Any]:
     """Replace (modify) an existing order by clOrdId."""
     return _get(
         "/rest/order/replaceById",
@@ -298,13 +284,9 @@ def get_positions(account_name: str) -> dict[str, Any]:
 
 def get_detailed_positions(account_name: str) -> dict[str, Any]:
     """Get detailed positions for an account (Risk API)."""
-    return _request(
-        "GET", f"/rest/risk/detailedPosition/{account_name}", auth_basic=_risk_auth()
-    )
+    return _request("GET", f"/rest/risk/detailedPosition/{account_name}", auth_basic=_risk_auth())
 
 
 def get_account_report(account_name: str) -> dict[str, Any]:
     """Get account report (Risk API)."""
-    return _request(
-        "GET", f"/rest/risk/accountReport/{account_name}", auth_basic=_risk_auth()
-    )
+    return _request("GET", f"/rest/risk/accountReport/{account_name}", auth_basic=_risk_auth())

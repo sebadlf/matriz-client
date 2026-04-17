@@ -9,8 +9,8 @@ then sends an order and waits for messages.
 import signal
 import time
 
-from main import ACCOUNT_1
 import matriz_client as primary
+from main import ACCOUNT_1
 
 ACCOUNT = "xprimary"
 SYMBOL = "MERV - XMEV - AL30 - 24HS"
@@ -58,7 +58,7 @@ def main() -> None:
     signal.signal(signal.SIGINT, stop)
 
     # 1. Connect
-    print(f"Connecting to WebSocket...")
+    print("Connecting to WebSocket...")
     primary.ws_connect(
         on_message=on_message,
         on_error=on_error,
