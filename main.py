@@ -21,7 +21,7 @@ def main() -> None:
     # # print(f"DDF instruments: {len(instruments)}")
 
     # if instruments:
-    #     # symbol = instruments[0]["symbol"]
+    #     # symbol = instruments[0].instrumentId.symbol
     #     symbol = "MERV - XMEV - AL30 - 24HS"
     #     md = primary.get_market_data(symbol)
     #     print(f"Market data for {symbol}:", md)
@@ -43,19 +43,19 @@ def main() -> None:
 
     # time.sleep(3)
 
-    # check = primary.get_order_status(result["clientId"], result["proprietary"])
+    # check = primary.get_order_status(result.clientId, result.proprietary)
     # print(check)
     # print("")
 
     # time.sleep(3)
 
-    # check = primary.get_order_status(result["clientId"], result["proprietary"])
+    # check = primary.get_order_status(result.clientId, result.proprietary)
     # print(check)
     # print("")
 
     # time.sleep(3)
 
-    # check = primary.get_order_status(result["clientId"], result["proprietary"])
+    # check = primary.get_order_status(result.clientId, result.proprietary)
     # print(check)
     # print("")
 
@@ -63,7 +63,7 @@ def main() -> None:
     # print(f"Market data for {symbol}:", md)
     # print("")
 
-    # check = primary.get_order_status(result["clientId"], result["proprietary"])
+    # check = primary.get_order_status(result.clientId, result.proprietary)
     # print(check)
     # print("")
 

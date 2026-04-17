@@ -124,9 +124,12 @@ def test_get_filters_none_params(reset_client_state: None, mock_session: MagicMo
 
 def test_get_segments(reset_client_state: None, mock_session: MagicMock) -> None:
     mock_session.request.return_value = build_response(
-        {"status": "OK", "segments": [{"marketSegmentId": "DDF"}]}
+        {"status": "OK", "segments": [{"marketSegmentId": "DDF", "marketId": "ROFX"}]}
     )
-    assert _client.get_segments() == [{"marketSegmentId": "DDF"}]
+    segments = _client.get_segments()
+    assert len(segments) == 1
+    assert segments[0].marketSegmentId == "DDF"
+    assert segments[0].marketId == "ROFX"
     args, _ = mock_session.request.call_args
     assert args[1].endswith("/rest/segment/all")
 
@@ -135,10 +138,13 @@ def test_get_instrument_detail_passes_symbol(
     reset_client_state: None, mock_session: MagicMock
 ) -> None:
     mock_session.request.return_value = build_response(
-        {"status": "OK", "instrument": {"symbol": "DLR/DIC23"}}
+        {
+            "status": "OK",
+            "instrument": {"instrumentId": {"marketId": "ROFX", "symbol": "DLR/DIC23"}},
+        }
     )
     result = _client.get_instrument_detail("DLR/DIC23")
-    assert result == {"symbol": "DLR/DIC23"}
+    assert result.instrumentId.symbol == "DLR/DIC23"
     _, kwargs = mock_session.request.call_args
     assert kwargs["params"] == {"symbol": "DLR/DIC23", "marketId": "ROFX"}
 

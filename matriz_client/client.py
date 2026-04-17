@@ -23,32 +23,34 @@ from __future__ import annotations
 import os
 import time
 from collections.abc import Sequence
-from typing import Any, cast
+from typing import Any
 
 import requests as _requests
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 
 from .exceptions import AuthenticationError, PrimaryAPIError
-from .types import (
-    DEFAULT_MARKET_DATA_ENTRIES,
+from .models import (
     AccountReport,
-    CFICode,
     DetailedPosition,
     Instrument,
     InstrumentDetail,
-    MarketDataEntry,
     MarketDataSnapshot,
-    MarketId,
     NewOrderResponse,
     Order,
-    OrderType,
     Position,
     Segment,
+    Trade,
+)
+from .types import (
+    DEFAULT_MARKET_DATA_ENTRIES,
+    CFICode,
+    MarketDataEntry,
+    MarketId,
+    OrderType,
     SegmentId,
     Side,
     TimeInForce,
-    Trade,
 )
 
 load_dotenv()
@@ -181,7 +183,7 @@ def get_segments() -> list[Segment]:
     — one of ``DDF``, ``DDA``, ``DUAL``, ``MERV``, ``U-DDF``, ``U-DDA``,
     ``U-DUAL`` — and the owning ``marketId`` (§4).
     """
-    return _get("/rest/segment/all")["segments"]
+    return [Segment.from_api(s) for s in _get("/rest/segment/all")["segments"]]
 
 
 # ------------------------------------------------------------------
@@ -191,12 +193,12 @@ def get_segments() -> list[Segment]:
 
 def get_all_instruments() -> list[Instrument]:
     """Return all tradable instruments with basic info (symbol + ``marketId``)."""
-    return _get("/rest/instruments/all")["instruments"]
+    return [Instrument.from_api(i) for i in _get("/rest/instruments/all")["instruments"]]
 
 
 def get_instruments_details() -> list[InstrumentDetail]:
     """Return all instruments with full detail (tick size, contract size, etc.)."""
-    return _get("/rest/instruments/details")["instruments"]
+    return [InstrumentDetail.from_api(i) for i in _get("/rest/instruments/details")["instruments"]]
 
 
 def get_instrument_detail(symbol: str, market_id: MarketId = "ROFX") -> InstrumentDetail:
@@ -206,7 +208,9 @@ def get_instrument_detail(symbol: str, market_id: MarketId = "ROFX") -> Instrume
         symbol: Instrument symbol (e.g. ``"DLR/DIC23"``).
         market_id: Market identifier; defaults to ``"ROFX"`` (§12.1).
     """
-    return _get("/rest/instruments/detail", symbol=symbol, marketId=market_id)["instrument"]
+    return InstrumentDetail.from_api(
+        _get("/rest/instruments/detail", symbol=symbol, marketId=market_id)["instrument"]
+    )
 
 
 def get_instruments_by_cfi(cfi_code: CFICode) -> list[Instrument]:
@@ -215,7 +219,10 @@ def get_instruments_by_cfi(cfi_code: CFICode) -> list[Instrument]:
     Accepted values (§5.4): ``ESXXXX``, ``DBXXXX``, ``OCASPS``, ``OPASPS``,
     ``FXXXSX``, ``OPAFXS``, ``OCAFXS``, ``EMXXXX``, ``DBXXFR``.
     """
-    return _get("/rest/instruments/byCFICode", CFICode=cfi_code)["instruments"]
+    return [
+        Instrument.from_api(i)
+        for i in _get("/rest/instruments/byCFICode", CFICode=cfi_code)["instruments"]
+    ]
 
 
 def get_instruments_by_segment(
@@ -228,8 +235,11 @@ def get_instruments_by_segment(
             ``"U-DDF"``, ``"U-DDA"``, ``"U-DUAL"`` (§5.5).
         market_id: Market identifier; defaults to ``"ROFX"``.
     """
-    return _get("/rest/instruments/bySegment", MarketSegmentID=segment_id, MarketID=market_id)[
-        "instruments"
+    return [
+        Instrument.from_api(i)
+        for i in _get(
+            "/rest/instruments/bySegment", MarketSegmentID=segment_id, MarketID=market_id
+        )["instruments"]
     ]
 
 
@@ -299,7 +309,7 @@ def new_order(
     if expire_date is not None:
         params["expireDate"] = expire_date
 
-    return _get("/rest/order/newSingleOrder", **params)["order"]
+    return NewOrderResponse.from_api(_get("/rest/order/newSingleOrder", **params)["order"])
 
 
 def replace_order(cl_ord_id: str, proprietary: str, qty: int, price: float) -> NewOrderResponse:
@@ -312,13 +322,15 @@ def replace_order(cl_ord_id: str, proprietary: str, qty: int, price: float) -> N
         :class:`~matriz_client.types.NewOrderResponse` — the ``order``
         envelope unwrapped for consistency with :func:`new_order`.
     """
-    return _get(
-        "/rest/order/replaceById",
-        clOrdId=cl_ord_id,
-        proprietary=proprietary,
-        orderQty=qty,
-        price=price,
-    )["order"]
+    return NewOrderResponse.from_api(
+        _get(
+            "/rest/order/replaceById",
+            clOrdId=cl_ord_id,
+            proprietary=proprietary,
+            orderQty=qty,
+            price=price,
+        )["order"]
+    )
 
 
 def cancel_order(cl_ord_id: str, proprietary: str) -> NewOrderResponse:
@@ -328,12 +340,16 @@ def cancel_order(cl_ord_id: str, proprietary: str) -> NewOrderResponse:
         :class:`~matriz_client.types.NewOrderResponse` — the ``order``
         envelope unwrapped for consistency with :func:`new_order`.
     """
-    return _get("/rest/order/cancelById", clOrdId=cl_ord_id, proprietary=proprietary)["order"]
+    return NewOrderResponse.from_api(
+        _get("/rest/order/cancelById", clOrdId=cl_ord_id, proprietary=proprietary)["order"]
+    )
 
 
 def get_order_status(cl_ord_id: str, proprietary: str) -> Order:
     """Return the latest status record for the request ``(clOrdId, proprietary)`` (§6.8)."""
-    return _get("/rest/order/id", clOrdId=cl_ord_id, proprietary=proprietary)["order"]
+    return Order.from_api(
+        _get("/rest/order/id", clOrdId=cl_ord_id, proprietary=proprietary)["order"]
+    )
 
 
 def get_order_history(cl_ord_id: str, proprietary: str) -> list[Order]:
@@ -342,27 +358,30 @@ def get_order_history(cl_ord_id: str, proprietary: str) -> list[Order]:
     The ``orders`` envelope is unwrapped so callers iterate directly over
     :class:`~matriz_client.types.Order` records.
     """
-    return _get("/rest/order/allById", clOrdId=cl_ord_id, proprietary=proprietary)["orders"]
+    return [
+        Order.from_api(o)
+        for o in _get("/rest/order/allById", clOrdId=cl_ord_id, proprietary=proprietary)["orders"]
+    ]
 
 
 def get_active_orders(account_id: str) -> list[Order]:
     """Return all orders currently active (``NEW`` or ``PARTIALLY_FILLED``) for an account (§6.10)."""
-    return _get("/rest/order/actives", accountId=account_id)["orders"]
+    return [Order.from_api(o) for o in _get("/rest/order/actives", accountId=account_id)["orders"]]
 
 
 def get_filled_orders(account_id: str) -> list[Order]:
     """Return all fully filled orders for an account (§6.11)."""
-    return _get("/rest/order/filleds", accountId=account_id)["orders"]
+    return [Order.from_api(o) for o in _get("/rest/order/filleds", accountId=account_id)["orders"]]
 
 
 def get_all_orders(account_id: str) -> list[Order]:
     """Return the latest status record of every request sent by an account (§6.12)."""
-    return _get("/rest/order/all", accountId=account_id)["orders"]
+    return [Order.from_api(o) for o in _get("/rest/order/all", accountId=account_id)["orders"]]
 
 
 def get_order_by_exec_id(exec_id: str) -> Order:
     """Return the order matching the given execution ID (``execId``) (§6.13)."""
-    return _get("/rest/order/byExecId", execId=exec_id)["order"]
+    return Order.from_api(_get("/rest/order/byExecId", execId=exec_id)["order"])
 
 
 # ------------------------------------------------------------------
@@ -388,13 +407,15 @@ def get_market_data(
         market_id: Market identifier; defaults to ``"ROFX"``.
         depth: Book depth (1-5); ``None`` uses the server default.
     """
-    return _get(
-        "/rest/marketdata/get",
-        marketId=market_id,
-        symbol=symbol,
-        entries=",".join(entries),
-        depth=depth,
-    )["marketData"]
+    return MarketDataSnapshot.from_api(
+        _get(
+            "/rest/marketdata/get",
+            marketId=market_id,
+            symbol=symbol,
+            entries=",".join(entries),
+            depth=depth,
+        )["marketData"]
+    )
 
 
 def get_trades(
@@ -411,15 +432,18 @@ def get_trades(
     Use ``date`` for a single day, or the ``date_from``/``date_to`` pair
     for a range. Dates must be in ``"YYYY-MM-DD"`` format.
     """
-    return _get(
-        "/rest/data/getTrades",
-        marketId=market_id,
-        symbol=symbol,
-        date=date,
-        dateFrom=date_from,
-        dateTo=date_to,
-        environment=environment,
-    )["trades"]
+    return [
+        Trade.from_api(t)
+        for t in _get(
+            "/rest/data/getTrades",
+            marketId=market_id,
+            symbol=symbol,
+            date=date,
+            dateFrom=date_from,
+            dateTo=date_to,
+            environment=environment,
+        )["trades"]
+    ]
 
 
 # ------------------------------------------------------------------
@@ -433,11 +457,14 @@ def get_positions(account_name: str) -> list[Position]:
     The ``positions`` envelope is unwrapped so callers iterate directly
     over :class:`~matriz_client.types.Position` records.
     """
-    return _request(
-        "GET",
-        f"/rest/risk/position/getPositions/{account_name}",
-        auth_basic=_risk_auth(),
-    )["positions"]
+    return [
+        Position.from_api(p)
+        for p in _request(
+            "GET",
+            f"/rest/risk/position/getPositions/{account_name}",
+            auth_basic=_risk_auth(),
+        )["positions"]
+    ]
 
 
 def get_detailed_positions(account_name: str) -> DetailedPosition:
@@ -447,9 +474,8 @@ def get_detailed_positions(account_name: str) -> DetailedPosition:
     fields at the top level (no ``status`` envelope), so the response is
     returned as-is.
     """
-    return cast(
-        DetailedPosition,
-        _request("GET", f"/rest/risk/detailedPosition/{account_name}", auth_basic=_risk_auth()),
+    return DetailedPosition.from_api(
+        _request("GET", f"/rest/risk/detailedPosition/{account_name}", auth_basic=_risk_auth())
     )
 
 
@@ -459,7 +485,6 @@ def get_account_report(account_name: str) -> AccountReport:
     As with :func:`get_detailed_positions`, the Risk API exposes the
     :class:`~matriz_client.types.AccountReport` fields at the top level.
     """
-    return cast(
-        AccountReport,
-        _request("GET", f"/rest/risk/accountReport/{account_name}", auth_basic=_risk_auth()),
+    return AccountReport.from_api(
+        _request("GET", f"/rest/risk/accountReport/{account_name}", auth_basic=_risk_auth())
     )
