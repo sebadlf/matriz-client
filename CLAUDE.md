@@ -70,9 +70,17 @@ The full Primary API v1.21 specification is in `primary_api_llm.md` (LLM-optimiz
 
 Para issues nuevos, el flujo es:
 
-1. Leer el issue en Linear (via MCP) para entender el contexto
-2. Consultar notas de dominio relevantes en `matriz-vault/` (via obsidian MCP) si aplica
-3. Crear branch con el formato correcto
-4. Implementar, correr Ruff localmente (`uv run ruff check . && uv run ruff format .`)
-5. Commitear y crear PR con link al issue de Linear
-6. Merge → Linear auto-cierra el issue
+1. Leer el issue en Linear (via MCP) para entender el contexto.
+2. Consultar notas relevantes del vault (`matriz-vault/`, via obsidian MCP) — al menos `projects/matriz-client/README.md`, ADRs, runbooks y domain notes que toquen el área.
+3. Crear branch con el formato correcto.
+4. Implementar, correr Ruff localmente (`uv run ruff check . && uv run ruff format .`).
+5. Commitear y crear PR con link al issue de Linear.
+6. Esperar CI verde y mergear (squash). Linear auto-cierra el issue.
+7. **Cierre del ticket — actualizar el vault (paso obligatorio, no opcional).** Antes de pasar al próximo ticket, escribir lo que corresponda usando el `obsidian` MCP. Criterios:
+   - **ADR** en `projects/matriz-client/decisions/` — si introdujiste una decisión arquitectónica nueva, cambiaste una previa, o evaluaste alternativas que vale la pena recordar. Usar `_templates/tpl-adr.md` y numerar correlativo (`ADR-NNN`).
+   - **Runbook** en `projects/matriz-client/runbooks/` — si codificaste un procedimiento operativo que se va a repetir (release, rotación de credenciales, debugging de un endpoint problemático). Usar `_templates/tpl-runbook.md`.
+   - **Domain note** en `projects/matriz-client/domain/` — si descubriste un patrón del dominio (API, mercado, datos) que el código solo no comunica.
+   - **Daily log** del día en `daily-logs/YYYY-MM-DD.md` — siempre, una entrada por ticket cerrado con qué se hizo, aprendizajes, y links a notas creadas/actualizadas. Crear el archivo con `_templates/tpl-daily-log.md` si todavía no existe para hoy.
+   - **`projects/matriz-client/README.md`** — actualizar si la nota nueva debería listarse en Decisiones, Runbooks o Notas de dominio.
+
+   Si **ninguna** de las primeras tres aplica, igualmente registrar el ticket en el daily log con una línea que diga por qué no generó documentación nueva. Cero documentación silenciosa.
