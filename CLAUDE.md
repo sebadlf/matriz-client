@@ -17,6 +17,9 @@ uv run python main.py
 
 # Run the test suite
 uv run pytest
+
+# Run the type checker
+uv run pyright
 ```
 
 Python 3.12+ is required (see `.python-version`).
@@ -61,7 +64,7 @@ The full Primary API v1.21 specification is in `primary_api_llm.md` (LLM-optimiz
 - **Branch format**: `sebadlf-bec-{issue-number}-{short-description}` (copy from the Linear issue — it auto-generates this)
 - **PR body**: must include the Linear issue ID (e.g., `BEC-7`) — triggers auto-link in Linear
 - **Never commit directly to `main`** — protected branch, PR required
-- **CI must pass** before merge: Ruff lint + format check, pytest (`.github/workflows/ci.yml`)
+- **CI must pass** before merge: Ruff lint + format check, pytest, pyright (`.github/workflows/ci.yml`)
 
 ## Workflow
 

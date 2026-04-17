@@ -20,7 +20,7 @@ _token: str | None = None
 _token_ts: float = 0.0
 _TOKEN_TTL = 23 * 60 * 60  # refresh 1 h before the 24 h expiry
 _session = _requests.Session()
-_session.timeout = 30.0
+_REQUEST_TIMEOUT = 30.0
 
 
 # ------------------------------------------------------------------
@@ -44,6 +44,7 @@ def login() -> str:
     resp = _session.post(
         f"{_base_url}/auth/getToken",
         headers={"X-Username": _user, "X-Password": _password},
+        timeout=_REQUEST_TIMEOUT,
     )
     resp.raise_for_status()
     token = resp.headers.get("X-Auth-Token")
@@ -69,11 +70,23 @@ def _request(
 ) -> dict[str, Any]:
     url = f"{_base_url}{path}"
     if auth_basic:
-        resp = _session.request(method, url, params=params, auth=HTTPBasicAuth(*auth_basic))
+        resp = _session.request(
+            method,
+            url,
+            params=params,
+            auth=HTTPBasicAuth(*auth_basic),
+            timeout=_REQUEST_TIMEOUT,
+        )
     else:
         _ensure_token()
         assert _token is not None
-        resp = _session.request(method, url, params=params, headers={"X-Auth-Token": _token})
+        resp = _session.request(
+            method,
+            url,
+            params=params,
+            headers={"X-Auth-Token": _token},
+            timeout=_REQUEST_TIMEOUT,
+        )
 
     resp.raise_for_status()
     data: dict[str, Any] = resp.json()
