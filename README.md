@@ -81,6 +81,17 @@ from matriz_client import Side, OrderType, TimeInForce, Order, MarketDataSnapsho
 - Full Primary API v1.21 spec: [`primary_api_llm.md`](./primary_api_llm.md)
 - Public surface: `matriz_client.__all__`
 
+## Releases
+
+Distribution happens via GitHub Releases (no PyPI). The [`release.yml`](.github/workflows/release.yml) workflow builds and publishes a wheel + sdist on every `v*` tag push.
+
+Cutting a new release:
+
+1. Bump `project.version` in `pyproject.toml`.
+2. Commit and merge the bump to `main`.
+3. Tag the commit: `git tag v0.1.0 && git push origin v0.1.0`.
+4. The workflow validates that the tag matches the version, builds the artifacts, and uploads them to the corresponding Release.
+
 ## License
 
 MIT © Sebastián de la Fuente
