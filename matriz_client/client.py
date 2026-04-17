@@ -23,7 +23,7 @@ from __future__ import annotations
 import os
 import time
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, cast
 
 import requests as _requests
 from dotenv import load_dotenv
@@ -32,7 +32,9 @@ from requests.auth import HTTPBasicAuth
 from .exceptions import AuthenticationError, PrimaryAPIError
 from .types import (
     DEFAULT_MARKET_DATA_ENTRIES,
+    AccountReport,
     CFICode,
+    DetailedPosition,
     Instrument,
     InstrumentDetail,
     MarketDataEntry,
@@ -41,6 +43,7 @@ from .types import (
     NewOrderResponse,
     Order,
     OrderType,
+    Position,
     Segment,
     SegmentId,
     Side,
@@ -424,20 +427,39 @@ def get_trades(
 # ------------------------------------------------------------------
 
 
-def get_positions(account_name: str) -> dict[str, Any]:
-    """Return aggregated positions for an account (Risk API, HTTP Basic Auth)."""
+def get_positions(account_name: str) -> list[Position]:
+    """Return aggregated positions for an account (§9.1, HTTP Basic Auth).
+
+    The ``positions`` envelope is unwrapped so callers iterate directly
+    over :class:`~matriz_client.types.Position` records.
+    """
     return _request(
         "GET",
         f"/rest/risk/position/getPositions/{account_name}",
         auth_basic=_risk_auth(),
+    )["positions"]
+
+
+def get_detailed_positions(account_name: str) -> DetailedPosition:
+    """Return trade-level detailed positions for an account (§9.2).
+
+    The Risk API returns the :class:`~matriz_client.types.DetailedPosition`
+    fields at the top level (no ``status`` envelope), so the response is
+    returned as-is.
+    """
+    return cast(
+        DetailedPosition,
+        _request("GET", f"/rest/risk/detailedPosition/{account_name}", auth_basic=_risk_auth()),
     )
 
 
-def get_detailed_positions(account_name: str) -> dict[str, Any]:
-    """Return trade-level detailed positions for an account (Risk API)."""
-    return _request("GET", f"/rest/risk/detailedPosition/{account_name}", auth_basic=_risk_auth())
+def get_account_report(account_name: str) -> AccountReport:
+    """Return the full account report (cash, margins, P&L) for an account (§9.3).
 
-
-def get_account_report(account_name: str) -> dict[str, Any]:
-    """Return the full account report (cash, margins, P&L) for an account (Risk API)."""
-    return _request("GET", f"/rest/risk/accountReport/{account_name}", auth_basic=_risk_auth())
+    As with :func:`get_detailed_positions`, the Risk API exposes the
+    :class:`~matriz_client.types.AccountReport` fields at the top level.
+    """
+    return cast(
+        AccountReport,
+        _request("GET", f"/rest/risk/accountReport/{account_name}", auth_basic=_risk_auth()),
+    )
