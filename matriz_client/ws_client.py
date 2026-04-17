@@ -22,41 +22,24 @@ from typing import Any
 import websocket
 
 from . import client as _rest
+from .types import DEFAULT_MARKET_DATA_ENTRIES, MARKET_DATA_ENTRIES
 
 # -- Types --
 MessageCallback = Callable[[dict[str, Any]], None]
 ErrorCallback = Callable[[Exception], None]
 CloseCallback = Callable[[], None]
 
-# Full catalogue of market-data entry codes recognized by the Primary API.
-# See §8.3 of the Primary API spec (``primary_api_llm.md``).
-MARKET_DATA_ENTRIES: tuple[str, ...] = (
-    "BI",  # best bid
-    "OF",  # best offer
-    "LA",  # last traded price
-    "OP",  # open price
-    "CL",  # previous close
-    "SE",  # settlement
-    "HI",  # session high
-    "LO",  # session low
-    "TV",  # traded volume
-    "OI",  # open interest
-    "IV",  # index value
-    "EV",  # effective volume (ByMA)
-    "NV",  # nominal volume (ByMA)
-    "ACP",  # today's close
-)
-
-# Default subset used when the caller does not specify ``entries``.
-DEFAULT_MARKET_DATA_ENTRIES: tuple[str, ...] = (
-    "BI",
-    "OF",
-    "LA",
-    "OP",
-    "CL",
-    "SE",
-    "OI",
-)
+__all__ = [
+    "DEFAULT_MARKET_DATA_ENTRIES",
+    "MARKET_DATA_ENTRIES",
+    "ws_cancel_order",
+    "ws_connect",
+    "ws_disconnect",
+    "ws_is_connected",
+    "ws_new_order",
+    "ws_subscribe_market_data",
+    "ws_subscribe_order_reports",
+]
 
 # -- Module-level state --
 _ws: websocket.WebSocketApp | None = None

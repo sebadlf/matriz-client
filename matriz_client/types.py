@@ -51,6 +51,9 @@ __all__ = [
     "Position",
     "Segment",
     "Trade",
+    # Constants
+    "DEFAULT_MARKET_DATA_ENTRIES",
+    "MARKET_DATA_ENTRIES",
 ]
 
 
@@ -120,6 +123,40 @@ OrderStatus = Literal[
 
 Currency = Literal["ARS", "USD"]
 """Currency observed in instrument detail responses."""
+
+
+# ----------------------------------------------------------------------
+# Market-data entry catalogues (§8.3)
+# ----------------------------------------------------------------------
+
+MARKET_DATA_ENTRIES: tuple[MarketDataEntry, ...] = (
+    "BI",  # best bid
+    "OF",  # best offer
+    "LA",  # last traded price
+    "OP",  # open price
+    "CL",  # previous close
+    "SE",  # settlement
+    "HI",  # session high
+    "LO",  # session low
+    "TV",  # traded volume
+    "OI",  # open interest
+    "IV",  # index value
+    "EV",  # effective volume (ByMA)
+    "NV",  # nominal volume (ByMA)
+    "ACP",  # today's close
+)
+"""Full catalogue of market-data entry codes recognised by the Primary API."""
+
+DEFAULT_MARKET_DATA_ENTRIES: tuple[MarketDataEntry, ...] = (
+    "BI",
+    "OF",
+    "LA",
+    "OP",
+    "CL",
+    "SE",
+    "OI",
+)
+"""Default subset used when the caller does not specify ``entries``."""
 
 
 # ----------------------------------------------------------------------
