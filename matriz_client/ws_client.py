@@ -22,10 +22,16 @@ from typing import Any
 import websocket
 
 from . import client as _rest
+from .models import (
+    ExecutionReportFrame,
+    MarketDataFrame,
+    PrimaryWsMessage,
+    UnknownFrame,
+)
 from .types import DEFAULT_MARKET_DATA_ENTRIES, MARKET_DATA_ENTRIES
 
 # -- Types --
-MessageCallback = Callable[[dict[str, Any]], None]
+MessageCallback = Callable[[PrimaryWsMessage], None]
 ErrorCallback = Callable[[Exception], None]
 CloseCallback = Callable[[], None]
 
@@ -40,6 +46,12 @@ __all__ = [
     "ws_subscribe_market_data",
     "ws_subscribe_order_reports",
 ]
+
+# Maps the inbound ``type`` field to the safe-access frame model.
+_FRAME_MODELS: dict[str, type] = {
+    "Md": MarketDataFrame,
+    "or": ExecutionReportFrame,
+}
 
 # -- Module-level state --
 _ws: websocket.WebSocketApp | None = None
@@ -67,10 +79,21 @@ def _handle_open(ws: websocket.WebSocketApp) -> None:
     _connected.set()
 
 
+def _parse_frame(data: dict[str, Any]) -> PrimaryWsMessage:
+    """Wrap ``data`` in the safe-access frame model matching its ``type``.
+
+    Frames with an unknown or missing ``type`` collapse to
+    :class:`~matriz_client.models.UnknownFrame`, which keeps the raw
+    payload available via :attr:`UnknownFrame.raw`.
+    """
+    cls = _FRAME_MODELS.get(data.get("type", ""), UnknownFrame)
+    return cls.from_api(data)
+
+
 def _handle_message(ws: websocket.WebSocketApp, raw: str) -> None:
     if _on_message is not None:
         data: dict[str, Any] = json.loads(raw)
-        _on_message(data)
+        _on_message(_parse_frame(data))
 
 
 def _handle_error(ws: websocket.WebSocketApp, error: Exception) -> None:

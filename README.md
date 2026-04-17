@@ -41,7 +41,7 @@ segments = primary.get_segments()
 instruments = primary.get_instruments_by_segment("DDF")
 
 snapshot = primary.get_market_data("DLR/DIC23", depth=5)
-print(snapshot["BI"], snapshot["OF"])
+print(snapshot.BI, snapshot.OF)
 
 resp = primary.new_order(
     symbol="DLR/DIC23",
@@ -50,27 +50,38 @@ resp = primary.new_order(
     account="REM6771",
     price=210.5,
 )
-print(resp["clientId"], resp["proprietary"])
+print(resp.clientId, resp.proprietary)
 ```
 
 ## Quickstart — WebSocket
 
 ```python
 import matriz_client as primary
+from matriz_client import (
+    ExecutionReportFrame,
+    MarketDataFrame,
+    PrimaryWsMessage,
+    UnknownFrame,
+)
 
 
-def on_md(msg: dict) -> None:
-    print("MD event:", msg)
+def on_msg(msg: PrimaryWsMessage) -> None:
+    if isinstance(msg, MarketDataFrame):
+        print(msg.instrumentId.symbol, msg.marketData.BI, msg.marketData.OF)
+    elif isinstance(msg, ExecutionReportFrame):
+        print(msg.orderReport.clOrdId, msg.orderReport.status)
+    elif isinstance(msg, UnknownFrame):
+        print("unhandled frame:", msg.type, msg.raw)
 
 
 primary.login()
-primary.ws_connect(on_message=on_md)
+primary.ws_connect(on_message=on_msg)
 primary.ws_subscribe_market_data(["DLR/DIC23"], depth=5)
 ```
 
 ## Typed API
 
-`matriz_client` ships a `py.typed` marker (PEP 561) and exports `Literal` / `TypedDict` definitions for every enum-like parameter and JSON response. Import them from the flat namespace:
+`matriz_client` ships a `py.typed` marker (PEP 561) and exports `Literal` aliases plus safe-access dataclasses for every enum-like parameter and JSON response. Missing keys collapse to safe defaults so chained access (e.g. `snapshot.SE.price`) never raises. Import them from the flat namespace:
 
 ```python
 from matriz_client import Side, OrderType, TimeInForce, Order, MarketDataSnapshot

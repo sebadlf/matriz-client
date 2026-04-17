@@ -34,18 +34,22 @@ __all__ = [
     "AccountId",
     "AccountReport",
     "DetailedPosition",
+    "ExecutionReportFrame",
     "Instrument",
     "InstrumentDetail",
     "InstrumentId",
     "MarketDataEntryValue",
+    "MarketDataFrame",
     "MarketDataLevel",
     "MarketDataSnapshot",
     "NewOrderResponse",
     "Order",
     "OrderReport",
     "Position",
+    "PrimaryWsMessage",
     "Segment",
     "Trade",
+    "UnknownFrame",
 ]
 
 
@@ -335,3 +339,55 @@ class AccountReport(_SafeModel):
     currentCash: float | None = None
     dailyDiff: float | None = None
     uncoveredMargin: float | None = None
+
+
+# ----------------------------------------------------------------------
+# WebSocket frames
+# ----------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class MarketDataFrame(_SafeModel):
+    """Market-data WebSocket frame (``type == "Md"``, §8.2)."""
+
+    type: str | None = None
+    timestamp: int | None = None
+    instrumentId: InstrumentId = field(default_factory=InstrumentId.empty)
+    marketData: MarketDataSnapshot = field(default_factory=MarketDataSnapshot.empty)
+
+
+@dataclass(frozen=True)
+class ExecutionReportFrame(_SafeModel):
+    """Execution-report WebSocket frame (``type == "or"``, §7.5)."""
+
+    type: str | None = None
+    timestamp: int | None = None
+    orderReport: OrderReport = field(default_factory=OrderReport.empty)
+
+
+@dataclass(frozen=True)
+class UnknownFrame:
+    """Catch-all for WebSocket frames whose ``type`` is not modeled.
+
+    Preserves the raw payload in :attr:`raw` so callers can still inspect
+    forward-compatible fields without losing information. Implements the
+    ``from_api``/``empty`` duck-typed contract so the WS dispatcher can
+    treat it like any other frame model.
+    """
+
+    type: str | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_api(cls, data: Any) -> Self:
+        if not isinstance(data, dict):
+            return cls()
+        return cls(type=data.get("type"), raw=dict(data))
+
+    @classmethod
+    def empty(cls) -> Self:
+        return cls()
+
+
+PrimaryWsMessage = MarketDataFrame | ExecutionReportFrame | UnknownFrame
+"""Union of inbound WebSocket frame variants surfaced to user callbacks."""

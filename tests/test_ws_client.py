@@ -7,6 +7,12 @@ import pytest
 
 from matriz_client import client as _rest
 from matriz_client import ws_client as _ws
+from matriz_client.models import (
+    ExecutionReportFrame,
+    MarketDataFrame,
+    PrimaryWsMessage,
+    UnknownFrame,
+)
 
 
 @pytest.fixture
@@ -177,10 +183,59 @@ def test_subscribe_market_data_custom_level(capture_send: list[dict[str, Any]]) 
 
 
 def test_handle_message_invokes_callback(monkeypatch: pytest.MonkeyPatch) -> None:
-    received: list[dict[str, Any]] = []
+    received: list[PrimaryWsMessage] = []
     monkeypatch.setattr(_ws, "_on_message", received.append)
-    _ws._handle_message(MagicMock(), '{"type": "Md", "marketData": {}}')
-    assert received == [{"type": "Md", "marketData": {}}]
+    _ws._handle_message(
+        MagicMock(),
+        '{"type": "Md", "instrumentId": {"marketId": "ROFX", "symbol": "DLR/DIC23"},'
+        ' "marketData": {"OP": 180.0}}',
+    )
+    assert len(received) == 1
+    msg = received[0]
+    assert isinstance(msg, MarketDataFrame)
+    assert msg.instrumentId.symbol == "DLR/DIC23"
+    assert msg.marketData.OP == 180.0
+
+
+def test_handle_message_parses_execution_report(monkeypatch: pytest.MonkeyPatch) -> None:
+    received: list[PrimaryWsMessage] = []
+    monkeypatch.setattr(_ws, "_on_message", received.append)
+    _ws._handle_message(
+        MagicMock(),
+        '{"type": "or", "timestamp": 1537212212623,'
+        ' "orderReport": {"clOrdId": "abc", "wsClOrdId": "ws-1", "status": "PENDING_NEW"}}',
+    )
+    msg = received[0]
+    assert isinstance(msg, ExecutionReportFrame)
+    assert msg.timestamp == 1537212212623
+    assert msg.orderReport.clOrdId == "abc"
+    assert msg.orderReport.wsClOrdId == "ws-1"
+
+
+def test_handle_message_unknown_type_falls_back_to_unknown_frame(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    received: list[PrimaryWsMessage] = []
+    monkeypatch.setattr(_ws, "_on_message", received.append)
+    _ws._handle_message(MagicMock(), '{"type": "heartbeat", "ts": 123}')
+    msg = received[0]
+    assert isinstance(msg, UnknownFrame)
+    assert msg.type == "heartbeat"
+    assert msg.raw == {"type": "heartbeat", "ts": 123}
+
+
+def test_handle_message_partial_market_data_payload_parses_safely(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing keys collapse to safe defaults; chained access never raises."""
+    received: list[PrimaryWsMessage] = []
+    monkeypatch.setattr(_ws, "_on_message", received.append)
+    _ws._handle_message(MagicMock(), '{"type": "Md"}')
+    msg = received[0]
+    assert isinstance(msg, MarketDataFrame)
+    assert msg.instrumentId.symbol is None
+    assert msg.marketData.BI == []
+    assert msg.marketData.SE.price is None
 
 
 def test_handle_message_noop_without_callback(monkeypatch: pytest.MonkeyPatch) -> None:
