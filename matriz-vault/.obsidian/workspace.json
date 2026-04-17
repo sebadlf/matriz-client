@@ -1,0 +1,250 @@
+{
+  "main": {
+    "id": "8efdbdcebcf52ac7",
+    "type": "split",
+    "children": [
+      {
+        "id": "6cc70feb4b868e10",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "15068f5a75a95d2b",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      },
+      {
+        "id": "32040801dc1f7552",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "91b33dc398ce18a9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Stateful module pattern.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Stateful module pattern"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2c5a879b337d0d6b",
+    "type": "split",
+    "children": [
+      {
+        "id": "47ca04b974cd327c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0d3c64ac9ace9d89",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "e70c493d9c24f0a1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "4663a9051e0b299a",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "2e98b68897154d62",
+    "type": "split",
+    "children": [
+      {
+        "id": "2ad334cb15c12ae4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e6ee0f4b657a7eb2",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Stateful module pattern.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Stateful module pattern"
+            }
+          },
+          {
+            "id": "0a8d783626647d47",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Stateful module pattern.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Stateful module pattern"
+            }
+          },
+          {
+            "id": "e3f304bb5e6b68cc",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "28af2aa994960d53",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "0c734d4378bfe563",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Stateful module pattern.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Stateful module pattern"
+            }
+          },
+          {
+            "id": "735950f61434362a",
+            "type": "leaf",
+            "state": {
+              "type": "calendar",
+              "state": {},
+              "icon": "calendar-with-checkmark",
+              "title": "Calendar"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "templater-obsidian:Templater": false
+    }
+  },
+  "active": "91b33dc398ce18a9",
+  "lastOpenFiles": [
+    "daily-logs/2026-04-16.md",
+    "retrospectives/README.md",
+    "daily-logs/README.md",
+    "workflows/Workflow de desarrollo.md",
+    "Stateful module pattern.md",
+    "Welcome.md",
+    "knowledge/tools/Obsidian — Este vault.md",
+    "knowledge/tools/Claude Code — CLAUDE.md best practices.md",
+    "knowledge/tools/README.md",
+    "knowledge/devops/README.md",
+    "knowledge/architecture/README.md",
+    "knowledge/python/README.md",
+    "projects/matriz-client/runbooks/Setup desde cero.md",
+    "projects/matriz-client/domain/Segmentos de mercado.md",
+    "projects/matriz-client/domain/Conceptos Primary API.md",
+    "projects/matriz-client/decisions/ADR-001 — GET para todo.md",
+    "projects/matriz-client/README.md",
+    "projects/_templates/tpl-runbook.md",
+    "projects/_templates/tpl-retrospectiva.md",
+    "projects/_templates/tpl-daily-log.md",
+    "projects/_templates/tpl-linear-issue.md",
+    "projects/_templates/tpl-adr.md",
+    "projects/_templates/tpl-claude-md.md",
+    "HOME.md",
+    "retrospectives",
+    "daily-logs",
+    "workflows",
+    "knowledge/tools",
+    "knowledge/python",
+    "knowledge/devops",
+    "knowledge/architecture",
+    "knowledge",
+    "projects/matriz-client/runbooks",
+    "projects/matriz-client/domain"
+  ]
+}
