@@ -43,3 +43,30 @@ The full Primary API v1.21 specification is in `primary_api_llm.md` (LLM-optimiz
 - `clOrdId` identifies a request; `orderId` identifies the order in the exchange
 - Market segments: `DDF` (financial derivatives), `DDA` (agricultural), `DUAL`, `MERV` (external markets)
 - Market data entries: `BI` (bid), `OF` (offer), `LA` (last), `OP` (open), `CL` (close), `SE` (settlement), `OI` (open interest)
+
+## External References
+
+- **Linear team**: `Becerra` (prefix `BEC`). Use the Linear MCP to read/create/update issues.
+- **Obsidian vault**: `./matriz-vault/` — accessible via the `obsidian` MCP server. Contains:
+  - `projects/matriz-client/` — project-specific notes (domain, ADRs, runbooks)
+  - `knowledge/` — cross-project knowledge (Python, architecture, tools)
+  - `workflows/` — documented workflows
+- **GitHub**: repo `sebadlf/matriz-client`. Use the `github` MCP for PRs, issues, reviews.
+
+## Git Conventions
+
+- **Branch format**: `sebadlf-bec-{issue-number}-{short-description}` (copy from the Linear issue — it auto-generates this)
+- **PR body**: must include the Linear issue ID (e.g., `BEC-7`) — triggers auto-link in Linear
+- **Never commit directly to `main`** — protected branch, PR required
+- **CI must pass** before merge: Ruff lint + format check (`.github/workflows/ci.yml`)
+
+## Workflow
+
+Para issues nuevos, el flujo es:
+
+1. Leer el issue en Linear (via MCP) para entender el contexto
+2. Consultar notas de dominio relevantes en `matriz-vault/` (via obsidian MCP) si aplica
+3. Crear branch con el formato correcto
+4. Implementar, correr Ruff localmente (`uv run ruff check . && uv run ruff format .`)
+5. Commitear y crear PR con link al issue de Linear
+6. Merge → Linear auto-cierra el issue
