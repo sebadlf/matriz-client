@@ -144,3 +144,77 @@ def test_ws_new_order_full(capture_send: list[dict[str, Any]]) -> None:
 def test_ws_cancel_order(capture_send: list[dict[str, Any]]) -> None:
     _ws.ws_cancel_order("cl-1", "PBCP")
     assert capture_send == [{"type": "co", "clientId": "cl-1", "proprietary": "PBCP"}]
+
+
+# ------------------------------------------------------------------
+# Entry validation and level
+# ------------------------------------------------------------------
+
+
+def test_subscribe_market_data_rejects_unknown_entries(
+    capture_send: list[dict[str, Any]],
+) -> None:
+    with pytest.raises(ValueError, match="Unknown market data entries"):
+        _ws.ws_subscribe_market_data(["A"], entries=["BI", "BOGUS"])
+    assert capture_send == []
+
+
+def test_subscribe_market_data_accepts_full_entry_catalogue(
+    capture_send: list[dict[str, Any]],
+) -> None:
+    _ws.ws_subscribe_market_data(["A"], entries=list(_ws.MARKET_DATA_ENTRIES))
+    assert capture_send[0]["entries"] == list(_ws.MARKET_DATA_ENTRIES)
+
+
+def test_subscribe_market_data_custom_level(capture_send: list[dict[str, Any]]) -> None:
+    _ws.ws_subscribe_market_data(["A"], level=2)
+    assert capture_send[0]["level"] == 2
+
+
+# ------------------------------------------------------------------
+# Inbound handlers
+# ------------------------------------------------------------------
+
+
+def test_handle_message_invokes_callback(monkeypatch: pytest.MonkeyPatch) -> None:
+    received: list[dict[str, Any]] = []
+    monkeypatch.setattr(_ws, "_on_message", received.append)
+    _ws._handle_message(MagicMock(), '{"type": "Md", "marketData": {}}')
+    assert received == [{"type": "Md", "marketData": {}}]
+
+
+def test_handle_message_noop_without_callback(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(_ws, "_on_message", None)
+    _ws._handle_message(MagicMock(), '{"type": "Md"}')
+
+
+def test_handle_error_invokes_callback(monkeypatch: pytest.MonkeyPatch) -> None:
+    received: list[Exception] = []
+    monkeypatch.setattr(_ws, "_on_error", received.append)
+    err = RuntimeError("boom")
+    _ws._handle_error(MagicMock(), err)
+    assert received == [err]
+
+
+def test_handle_open_sets_event(monkeypatch: pytest.MonkeyPatch) -> None:
+    _ws._connected.clear()
+    _ws._handle_open(MagicMock())
+    try:
+        assert _ws._connected.is_set()
+    finally:
+        _ws._connected.clear()
+
+
+def test_handle_close_clears_event_and_invokes_callback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called = {"n": 0}
+
+    def cb() -> None:
+        called["n"] += 1
+
+    _ws._connected.set()
+    monkeypatch.setattr(_ws, "_on_close", cb)
+    _ws._handle_close(MagicMock(), 1000, "normal")
+    assert called["n"] == 1
+    assert not _ws._connected.is_set()

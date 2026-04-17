@@ -28,6 +28,36 @@ MessageCallback = Callable[[dict[str, Any]], None]
 ErrorCallback = Callable[[Exception], None]
 CloseCallback = Callable[[], None]
 
+# Full catalogue of market-data entry codes recognized by the Primary API.
+# See §8.3 of the Primary API spec (``primary_api_llm.md``).
+MARKET_DATA_ENTRIES: tuple[str, ...] = (
+    "BI",  # best bid
+    "OF",  # best offer
+    "LA",  # last traded price
+    "OP",  # open price
+    "CL",  # previous close
+    "SE",  # settlement
+    "HI",  # session high
+    "LO",  # session low
+    "TV",  # traded volume
+    "OI",  # open interest
+    "IV",  # index value
+    "EV",  # effective volume (ByMA)
+    "NV",  # nominal volume (ByMA)
+    "ACP",  # today's close
+)
+
+# Default subset used when the caller does not specify ``entries``.
+DEFAULT_MARKET_DATA_ENTRIES: tuple[str, ...] = (
+    "BI",
+    "OF",
+    "LA",
+    "OP",
+    "CL",
+    "SE",
+    "OI",
+)
+
 # -- Module-level state --
 _ws: websocket.WebSocketApp | None = None
 _ws_thread: threading.Thread | None = None
@@ -155,22 +185,35 @@ def ws_subscribe_market_data(
     *,
     market_id: str = "ROFX",
     depth: int = 1,
+    level: int = 1,
 ) -> None:
     """Subscribe to real-time market data for one or more instruments.
 
+    Incoming messages arrive via the ``on_message`` callback registered with
+    :func:`ws_connect` and have ``type == "Md"`` (see §8.2 of the spec).
+
     Args:
-        symbols: List of instrument symbols (e.g. ["DLR/DIC23", "SOJ.ROS/MAY23"]).
-        entries: Market data entries to receive (e.g. ["BI", "OF", "LA"]).
-                 Defaults to ["BI", "OF", "LA", "OP", "CL", "SE", "OI"].
-        market_id: Market identifier, defaults to "ROFX".
+        symbols: List of instrument symbols (e.g. ``["DLR/DIC23", "SOJ.ROS/MAY23"]``).
+        entries: Entry codes to receive (see :data:`MARKET_DATA_ENTRIES`).
+            Defaults to :data:`DEFAULT_MARKET_DATA_ENTRIES`.
+        market_id: Market identifier, defaults to ``"ROFX"``.
         depth: Book depth (1-5), defaults to 1.
+        level: Market-data level as defined by the Primary API, defaults to 1.
+
+    Raises:
+        ValueError: If ``entries`` contains codes that are not recognized.
+        RuntimeError: If the WebSocket is not connected.
     """
     if entries is None:
-        entries = ["BI", "OF", "LA", "OP", "CL", "SE", "OI"]
+        entries = list(DEFAULT_MARKET_DATA_ENTRIES)
+    else:
+        unknown = set(entries) - set(MARKET_DATA_ENTRIES)
+        if unknown:
+            raise ValueError(f"Unknown market data entries: {sorted(unknown)}")
 
     msg: dict[str, Any] = {
         "type": "smd",
-        "level": 1,
+        "level": level,
         "entries": entries,
         "products": [{"symbol": s, "marketId": market_id} for s in symbols],
         "depth": depth,
