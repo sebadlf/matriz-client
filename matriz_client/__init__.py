@@ -1,3 +1,17 @@
+"""Python client for the MATBA ROFEX Primary API v1.21.
+
+Re-exports the REST (:mod:`.client`) and WebSocket (:mod:`.ws_client`)
+surface as a flat namespace, so callers can simply do::
+
+    import matriz_client as primary
+
+    primary.login()
+    segments = primary.get_segments()
+    primary.ws_connect(on_message=my_handler)
+
+See the README and the in-module docstrings for usage details.
+"""
+
 from .client import (
     cancel_order,
     get_account_report,
