@@ -154,6 +154,7 @@ def test_market_data_snapshot_from_spec_example() -> None:
             {"price": 180.35, "size": 1000},
         ],
         "OP": 180.35,
+        "CL": {"price": 180.35, "size": None, "date": 1669852800000},
         "BI": [
             {"price": 179.75, "size": 275},
             {"price": 178.95, "size": 514},
@@ -164,6 +165,28 @@ def test_market_data_snapshot_from_spec_example() -> None:
     assert parsed.BI[0].price == 179.75
     assert parsed.SE.size is None
     assert parsed.SE.price == 180.3
+    assert parsed.CL.price == 180.35
+    assert parsed.CL.date == 1669852800000
+
+
+def test_market_data_snapshot_close_is_entry_value_not_scalar() -> None:
+    """Regression: CL viene como objeto {price, size, date}, no como float (issue #102)."""
+    parsed = MarketDataSnapshot.from_api(
+        {"CL": {"price": 20090.0, "size": None, "date": 1777420800000}}
+    )
+    assert isinstance(parsed.CL, MarketDataEntryValue)
+    assert parsed.CL.price == 20090.0
+    assert parsed.CL.size is None
+    assert parsed.CL.date == 1777420800000
+
+
+def test_market_data_snapshot_close_missing_returns_empty_entry() -> None:
+    """Safe-access: si CL no viene, devuelve un MarketDataEntryValue vacío, no None."""
+    parsed = MarketDataSnapshot.from_api({"OP": 180.0})
+    assert isinstance(parsed.CL, MarketDataEntryValue)
+    assert parsed.CL.price is None
+    assert parsed.CL.size is None
+    assert parsed.CL.date is None
 
 
 def test_market_data_snapshot_accepts_empty_payload() -> None:
