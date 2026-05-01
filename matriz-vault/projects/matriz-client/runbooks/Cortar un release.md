@@ -84,3 +84,4 @@ Los GitHub Releases se pueden borrar (UI o `gh release delete vX.Y.Z`). El tag s
 | Fecha | Quién | Notas |
 |-------|-------|-------|
 | 2026-04-17 | Sebastián | v0.2.0 — cierre del ciclo safe-access (BEC-26..30). |
+| 2026-04-30 | Sebastián | v0.2.1 — patch del typing de `MarketDataSnapshot.CL` (GH #102). Smoke install OK. |
