@@ -48,3 +48,22 @@ Esto motivó [[ADR-002 — Safe-access dataclasses sobre Pydantic]]. El cliente 
 1. Declararlo en el `@dataclass` del modelo correspondiente (`matriz_client/models.py`) con su tipo y default seguro (`None` para escalar, `field(default_factory=list/dict)` para colecciones, `field(default_factory=NestedModel.empty)` para anidado).
 2. No hace falta tocar `from_api` — el mixin lo descubre vía `get_type_hints`.
 3. Test en `tests/test_models.py`: payload presente y payload sin la key.
+
+## Cuidado: shape no obvio (ej. `CL` como objeto, no escalar)
+
+Algunas keys que el sentido común sugiere como escalares vienen como sub-objetos `{price, size, date}`. Caso de referencia (issue [#102](https://github.com/sebadlf/matriz-client/issues/102), fix en `v0.2.1`):
+
+- `OP` (Open) viene como **número plano**: `"OP": 180.35`.
+- `CL` (Close) viene como **objeto**: `"CL": {"price": 180.35, "size": null, "date": 1669852800000}` — igual que `LA`/`SE`/`OI`.
+
+La spec lo muestra así desde siempre (`primary_api_llm.md` §8.1, ejemplo de respuesta), pero el modelo declaraba `CL: float | None`, lo que rompía el safe-access (`md.CL` quedaba como `dict` crudo y `md.CL.price` levantaba `AttributeError`).
+
+### Checklist al modelar una key nueva
+
+1. **Mirar el ejemplo de respuesta de la spec** antes de elegir el tipo. Si la key aparece como objeto (`{price, size, date}` o cualquier otro), el tipo es un nested `_SafeModel`, no un escalar.
+2. **Verificar contra runtime real** con un símbolo que tenga ese campo poblado. Para market data: símbolos con cierre del día anterior + último operado + ajuste son los más completos (ej. acciones líquidas en `MERV - XMEV - * - 24HS`).
+3. **Cubrir el campo en el `from_spec_example` test** del modelo. Si el test no lo incluye, el bug pasa silencioso porque los nested models toleran ausencia.
+
+### Pendiente de auditar
+
+`HI`, `LO`, `IV`, `EV`, `NV`, `ACP` están declarados como `float | None` en `MarketDataSnapshot` pero no aparecen en el ejemplo de la spec. Antes de tocarlos hay que conseguir un payload real con esos campos para confirmar el shape.
