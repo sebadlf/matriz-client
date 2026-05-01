@@ -124,6 +124,15 @@ def on_msg(msg: PrimaryWsMessage) -> None:
 
 **Safety guarantee.** Missing keys never raise `KeyError`/`AttributeError`. Lists default to `[]`, nested models to an empty instance, scalars to `None`, dicts to `{}`. Chained access like `snapshot.SE.price` always resolves — the worst case is a final `None`.
 
+## Migrating from 0.2.0 to 0.2.1
+
+`MarketDataSnapshot.CL` ahora es `MarketDataEntryValue` en lugar de `float | None`. La wire format de la Primary API siempre devolvió `CL` como objeto `{price, size, date}` (igual que `LA`/`SE`/`OI`), así que el typing previo era incorrecto y el campo quedaba como `dict` crudo, rompiendo la garantía de safe-access. Acceso correcto:
+
+```python
+md = primary.get_market_data("DLR/DIC23")
+print(md.CL.price)   # antes: TypeError / AttributeError sobre el dict crudo
+```
+
 ## Reference
 
 - Full Primary API v1.21 spec: [`primary_api_llm.md`](./primary_api_llm.md)
