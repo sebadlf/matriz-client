@@ -271,8 +271,10 @@ class MarketDataSnapshot(_SafeModel):
     LA: MarketDataEntryValue = field(default_factory=MarketDataEntryValue.empty)
     SE: MarketDataEntryValue = field(default_factory=MarketDataEntryValue.empty)
     OI: MarketDataEntryValue = field(default_factory=MarketDataEntryValue.empty)
+    # CL viene como objeto {price, size, date} en la wire format (§8.1),
+    # igual que LA/SE/OI. OP en cambio es escalar. Ver issue #102.
+    CL: MarketDataEntryValue = field(default_factory=MarketDataEntryValue.empty)
     OP: float | None = None
-    CL: float | None = None
     HI: float | None = None
     LO: float | None = None
     TV: float | None = None
